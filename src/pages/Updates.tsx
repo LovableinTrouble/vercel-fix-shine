@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import PageWrapper from "@/components/PageWrapper";
 import Footer from "@/components/Footer";
-import { Rocket, Calendar, ArrowRight, Sparkles, Clock, ExternalLink, ChevronRight } from "lucide-react";
+import { Rocket, Sparkles, Clock, ExternalLink, ChevronRight } from "lucide-react";
 import { cheats } from "@/data/cheats";
 
 const DISCORD = "https://discord.gg/kbx46Cyc";
@@ -13,34 +13,14 @@ const DiscordIcon = ({ size = 14 }: { size?: number }) => (
   </svg>
 );
 
-// Per-cheat update logs
-const cheatUpdates: Record<string, { date: string; type: string; text: string }[]> = {
-  "x-gui": [
-    { date: "Apr 2, 2026", type: "update", text: "v7.0 — Full UI overhaul, new token generator" },
-    { date: "Mar 18, 2026", type: "fix", text: "Fixed auto farm disconnection on long sessions" },
-    { date: "Feb 14, 2026", type: "update", text: "Added Blook Unlocker and game script presets" },
-  ],
-  "x-bot": [
-    { date: "Mar 5, 2026", type: "update", text: "Added silent mode for background token farming" },
-    { date: "Feb 1, 2026", type: "release", text: "X-Bot v1.0 launched" },
-  ],
-  "k-bot": [
-    { date: "Apr 2, 2026", type: "release", text: "K-Bot officially launched with bot flooding & auto answer" },
-    { date: "Feb 14, 2026", type: "update", text: "Beta released with basic bot flooding support" },
-  ],
-  "quizware": [
-    { date: "Mar 18, 2026", type: "update", text: "Improved answer accuracy, added stealth mode toggle" },
-    { date: "Jan 20, 2026", type: "release", text: "QuizWare v1.0 launched" },
-  ],
-  "underground": [
-    { date: "Apr 2, 2026", type: "maintenance", text: "In maintenance — Wayground patched some endpoints" },
-    { date: "Mar 5, 2026", type: "release", text: "Underground launched — kick, crash, host swap" },
-  ],
-  "ixploit": [
-    { date: "Mar 18, 2026", type: "fix", text: "Fixed script injection bug on math problems" },
-    { date: "Feb 14, 2026", type: "fix", text: "Score control accuracy improved across all subjects" },
-    { date: "Jan 10, 2026", type: "release", text: "IXploit v0.1 released" },
-  ],
+// Only show the most recent update per cheat
+const cheatUpdates: Record<string, { date: string; type: string; text: string }> = {
+  "x-gui": { date: "Apr 2, 2026", type: "update", text: "v7.0 — Full UI overhaul, new token generator" },
+  "x-bot": { date: "Mar 5, 2026", type: "update", text: "Added silent mode for background token farming" },
+  "k-bot": { date: "Apr 2, 2026", type: "release", text: "K-Bot officially launched with bot flooding & auto answer" },
+  "quizware": { date: "Mar 18, 2026", type: "update", text: "Improved answer accuracy, added stealth mode toggle" },
+  "underground": { date: "Apr 2, 2026", type: "maintenance", text: "In maintenance — Wayground patched some endpoints" },
+  "ixploit": { date: "Mar 18, 2026", type: "fix", text: "Fixed script injection bug on math problems" },
 };
 
 const upcomingChanges: { tool: string; text: string; eta: string }[] = [
@@ -48,7 +28,8 @@ const upcomingChanges: { tool: string; text: string; eta: string }[] = [
   { tool: "QuizWare", text: "Support for Quizizz homework mode", eta: "Q2 2026" },
   { tool: "K-Bot", text: "Multi-game session support", eta: "Q3 2026" },
   { tool: "Underground", text: "Full re-write after Wayground patches", eta: "Q2 2026" },
-  { tool: "IXPLOIT", text: "Multi-subject auto-detection", eta: "Q3 2026" },
+  { tool: "IXploit", text: "Multi-subject auto-detection", eta: "Q3 2026" },
+  { tool: "X-Bot", text: "Dashboard UI for session monitoring", eta: "Q3 2026" },
 ];
 
 const typeBadge: Record<string, { label: string; classes: string }> = {
@@ -60,90 +41,80 @@ const typeBadge: Record<string, { label: string; classes: string }> = {
 
 const Updates = () => (
   <PageWrapper>
-    <section className="max-w-5xl mx-auto px-6 py-24 relative z-10">
+    <section className="max-w-5xl mx-auto px-6 py-16 relative z-10">
       {/* Header */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-16">
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/8 border border-primary/15 mb-6">
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-12">
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/8 border border-primary/15 mb-5">
           <Rocket className="w-3 h-3 text-primary" />
           <span className="text-[11px] font-semibold text-primary tracking-wide uppercase">Changelog</span>
         </div>
-        <h1 className="font-display text-5xl md:text-6xl font-bold text-foreground mb-4">
-          Cheat <span className="gradient-text">Updates</span>
+        <h1 className="font-display text-5xl md:text-6xl font-bold text-foreground mb-3">
+          Recent <span className="gradient-text">Updates</span>
         </h1>
         <p className="text-muted-foreground max-w-md mx-auto text-lg">
-          Latest patches, releases, and what's coming next — organized by tool.
+          Latest patches, releases, and what's coming next.
         </p>
       </motion.div>
 
-      {/* Per-cheat update cards */}
-      <div className="space-y-6 mb-20">
+      {/* Recent updates — one per cheat, grid layout */}
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-14">
         {cheats.map((cheat, i) => {
-          const updates = cheatUpdates[cheat.slug] || [];
+          const update = cheatUpdates[cheat.slug];
+          if (!update) return null;
+          const badge = typeBadge[update.type];
           return (
             <motion.div
               key={cheat.slug}
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.06 }}
-              className="glass-card-hover p-6"
+              className="glass-card-hover p-5 flex flex-col"
             >
-              {/* Cheat header */}
-              <div className="flex items-center justify-between mb-5">
+              {/* Header */}
+              <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
-                  <img src={cheat.logoSrc} alt={cheat.game} className="w-9 h-9 rounded-lg object-cover" />
+                  <img src={cheat.logoSrc} alt={cheat.game} className="w-8 h-8 rounded-lg object-cover" />
                   <div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-display text-base font-bold text-foreground">{cheat.tool}</span>
-                      <span className="text-[10px] font-mono text-muted-foreground">v{cheat.version}</span>
-                    </div>
+                    <span className="font-display text-sm font-bold text-foreground block leading-tight">{cheat.tool}</span>
                     <span className="text-[10px] text-muted-foreground uppercase tracking-wider">{cheat.game}</span>
                   </div>
                 </div>
+                <span className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border ${badge.classes}`}>
+                  {badge.label}
+                </span>
+              </div>
+
+              {/* Update content */}
+              <p className="text-sm text-muted-foreground leading-relaxed flex-1">{update.text}</p>
+
+              {/* Footer */}
+              <div className="flex items-center justify-between mt-4 pt-3 border-t border-glass-border/30">
+                <span className="text-[10px] text-muted-foreground/60 font-mono">{update.date}</span>
                 <Link
                   to={`/cheats/${cheat.slug}`}
-                  className="text-xs text-primary font-semibold flex items-center gap-1 hover:gap-2 transition-all duration-300"
+                  className="text-[10px] text-primary font-semibold flex items-center gap-1 hover:gap-1.5 transition-all duration-300"
                 >
                   View
                   <ChevronRight className="w-3 h-3" />
                 </Link>
               </div>
-
-              {/* Updates list */}
-              {updates.length > 0 ? (
-                <ul className="space-y-2.5">
-                  {updates.map((u, j) => {
-                    const badge = typeBadge[u.type];
-                    return (
-                      <li key={j} className="flex items-start gap-3 text-sm">
-                        <span className="text-[10px] text-muted-foreground font-mono w-24 flex-shrink-0 pt-0.5">{u.date}</span>
-                        <span className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border flex-shrink-0 mt-0.5 ${badge.classes}`}>
-                          {badge.label}
-                        </span>
-                        <span className="text-muted-foreground">{u.text}</span>
-                      </li>
-                    );
-                  })}
-                </ul>
-              ) : (
-                <p className="text-xs text-muted-foreground">No updates yet.</p>
-              )}
             </motion.div>
           );
         })}
       </div>
 
-      {/* Upcoming Changes */}
+      {/* Coming Soon */}
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
-        className="mb-16"
+        className="mb-14"
       >
-        <h2 className="font-display text-sm font-bold text-foreground mb-6 flex items-center gap-3 uppercase tracking-wider">
+        <h2 className="font-display text-sm font-bold text-foreground mb-6 flex items-center justify-center gap-3 uppercase tracking-wider">
           <Sparkles className="w-4 h-4 text-primary" />
           Coming Soon
         </h2>
-        <div className="grid sm:grid-cols-2 gap-4">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {upcomingChanges.map((item, i) => (
             <motion.div
               key={i}
@@ -157,7 +128,7 @@ const Updates = () => (
                 <Clock className="w-4 h-4 text-primary" />
               </div>
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 mb-0.5">
                   <span className="text-sm font-semibold text-foreground">{item.tool}</span>
                   <span className="text-[10px] text-muted-foreground/70">ETA {item.eta}</span>
                 </div>
